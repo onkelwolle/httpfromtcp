@@ -30,6 +30,9 @@ func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
 	}
 
 	key := line[:colon]
+	if key == "" {
+		return 0, false, fmt.Errorf("invalid header format, empty key")
+	}
 	if strings.HasSuffix(key, " ") {
 		return 0, false, fmt.Errorf("invalid header format, no spaces allowed before colon")
 	}
@@ -45,5 +48,5 @@ func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
 }
 
 func NewHeaders() Headers {
-	return Headers{}
+	return map[string]string{}
 }
