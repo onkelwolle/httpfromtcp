@@ -1,5 +1,5 @@
 // Package headers provides functionality for parsing and managing HTTP headers.
-// It implements RFC 7230 compliant header parsing with validation for header names
+// It implements RFC 9110 and RFC 9112 compliant header parsing with validation for header names
 // and values.
 package headers
 
@@ -17,7 +17,7 @@ var (
 )
 
 // Headers represents a collection of HTTP headers where keys are case-insensitive
-// and stored in lowercase form as per RFC 7230.
+// and stored in lowercase form as per RFC 9110.
 type Headers map[string]string
 
 const (
@@ -79,7 +79,7 @@ func (h Headers) extractKeyValue(line string) (key, value string, err error) {
 }
 
 // validateHeaderName checks if the header name contains only valid token characters
-// as defined in RFC 7230.
+// as defined in RFC 9110.
 func (h Headers) validateHeaderName(name string) error {
 	for _, c := range name {
 		if !isValidTokenChar(c) {
@@ -90,7 +90,7 @@ func (h Headers) validateHeaderName(name string) error {
 }
 
 // Set adds or updates a header value. The key is automatically converted to lowercase
-// to ensure case-insensitive matching as per RFC 7230. If the key already exists,
+// to ensure case-insensitive matching as per RFC 9110. If the key already exists,
 // the new value is appended to the existing value, separated by a comma and space.
 func (h Headers) Set(key, value string) {
 	lowercaseKey := strings.ToLower(key)
@@ -107,7 +107,7 @@ func NewHeaders() Headers {
 }
 
 // isValidTokenChar checks if a character is valid in an HTTP header token
-// as defined in RFC 7230 section 3.2.6.
+// as defined in RFC 9110 section 5.6.2.
 func isValidTokenChar(c rune) bool {
 	switch {
 	case c >= 'a' && c <= 'z':
