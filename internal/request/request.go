@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/onkelwolle/httpfromtcp/internal/headers"
 )
 
 const crlf = "\r\n"
@@ -13,6 +15,7 @@ const bufferSize = 8
 
 type Request struct {
 	RequestLine RequestLine
+	Headers     headers.Headers
 
 	state requestState
 }
@@ -21,6 +24,7 @@ type requestState int
 
 const (
 	requestStateInitialized requestState = iota
+	requestStateParsingHeaders
 	requestStateDone
 )
 
@@ -34,7 +38,8 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	buf := make([]byte, bufferSize, bufferSize)
 	readToIndex := 0
 	req := &Request{
-		state: requestStateInitialized,
+		state:   requestStateInitialized,
+		Headers: headers.NewHeaders(),
 	}
 
 	for req.state != requestStateDone {
@@ -120,6 +125,22 @@ func requestLineFromString(str string) (*RequestLine, error) {
 }
 
 func (r *Request) parse(data []byte) (int, error) {
+	totalBytesRead := 0
+	for r.state != requestStateDone {
+		n, err := r.parseSingle(data[totalBytesRead:])
+		if err != nil {
+			return 0, err
+		}
+		if n == 0 {
+			// No progress was made, so return what we've parsed so far
+			break
+		}
+		totalBytesRead += n
+	}
+	return totalBytesRead, nil
+}
+
+func (r *Request) parseSingle(data []byte) (int, error) {
 	switch r.state {
 	case requestStateInitialized:
 		requestLine, n, err := parseRequestLine(data)
@@ -130,7 +151,16 @@ func (r *Request) parse(data []byte) (int, error) {
 			return 0, nil
 		}
 		r.RequestLine = *requestLine
-		r.state = requestStateDone
+		r.state = requestStateParsingHeaders
+		return n, nil
+	case requestStateParsingHeaders:
+		n, done, err := r.Headers.Parse(data)
+		if err != nil {
+			return 0, err
+		}
+		if done {
+			r.state = requestStateDone
+		}
 		return n, nil
 	case requestStateDone:
 		return 0, fmt.Errorf("error: trying to read data in a done state")
