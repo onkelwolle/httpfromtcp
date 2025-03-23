@@ -90,10 +90,15 @@ func (h Headers) validateHeaderName(name string) error {
 }
 
 // Set adds or updates a header value. The key is automatically converted to lowercase
-// to ensure case-insensitive matching as per RFC 7230.
+// to ensure case-insensitive matching as per RFC 7230. If the key already exists,
+// the new value is appended to the existing value, separated by a comma and space.
 func (h Headers) Set(key, value string) {
 	lowercaseKey := strings.ToLower(key)
-	h[lowercaseKey] = value
+	if existingValue, exists := h[lowercaseKey]; exists {
+		h[lowercaseKey] = existingValue + ", " + value
+	} else {
+		h[lowercaseKey] = value
+	}
 }
 
 // NewHeaders creates a new empty Headers map.

@@ -63,4 +63,13 @@ func TestHeaders(t *testing.T) {
 	assert.Equal(t, 0, n)
 	assert.False(t, done)
 
+	// Test: Multiple headers combining with existing header
+	headers = map[string]string{"set-person": "lane-loves-go"}
+	data = []byte("Set-Person: prime-loves-zig\r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "lane-loves-go, prime-loves-zig", headers["set-person"])
+	assert.Equal(t, 29, n)
+	assert.False(t, done)
 }
